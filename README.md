@@ -1,164 +1,106 @@
-# 🛠️ Preprocessing Tool – Smart Data Cleaning & EDA Web App
+# 🛠️ Preprocessing Tool – Smart Data Cleaning & EDA Web App  
 
-A powerful **Streamlit-based data preprocessing application** designed to clean, transform, analyze, and prepare real-world datasets for machine learning.  
-This tool automates messy data cleaning tasks and provides a smooth, guided workflow for analysts and ML practitioners.
-
----
-
-## 🚀 Features
-
-### 🧹 1. Missing Value Handler
-- Automatic and manual imputation  
-- Smart suggestions  
-- Mean / Median / Mode / Zero / Custom value  
-- Drop-row option  
-- Before/After preview  
-- Undo support  
+A modern Streamlit-based data preprocessing tool designed to clean, explore, transform, and prepare messy real-world datasets for machine learning.  
+This tool follows a guided, end-to-end workflow suitable for data analysts, ML engineers, and students.
 
 ---
 
-### 🧠 2. Semantic Cleanup
-Fixes hidden data-quality issues:
-- Mixed data types  
-- Unit standardization  
-- Numeric extraction from dirty text  
-- Date parsing  
-- Phone/ID cleanup  
-- Pattern fixing  
-- String normalization  
+## 🚀 Workflow  
+
+1️⃣ Upload Dataset  
+2️⃣ Fix Missing Values  
+3️⃣ Semantic Cleanup  
+4️⃣ Outlier Handling  
+5️⃣ Exploratory Data Analysis (EDA)  
+6️⃣ Encoding & Transformation  
+7️⃣ Correlation Cleanup  
+8️⃣ PCA (optional)  
+9️⃣ Download Clean Dataset  
 
 ---
 
-### 📉 3. Outlier Detection & Fixing
-- IQR, Z-Score, Manual thresholds  
-- Before/After visualization  
-- Outlier % report  
-- Capping, removal, or replacement  
-- Undo support  
+## ✨ Key Features  
+
+- **Automatic & Manual Missing Value Handling**  
+- **Semantic Cleanup:** fix mixed types, units, patterns, and inconsistencies  
+- **Outlier Detection:** IQR, Z-Score, manual thresholds  
+- **Skewness Correction:** log, sqrt, reciprocal  
+- **Categorical Encoding:** Label, One-Hot, Manual Mapping  
+- **Correlation Handling:** detect & manage highly correlated features  
+- **PCA Dimensionality Reduction**  
+- **EDA Auto-Charts:** histograms, boxplots, Num–Num, Num–Cat, Cat–Cat visualizations  
 
 ---
 
-### 📊 4. EDA Core
-Automatically generates:
-- Histograms  
-- Boxplots  
-- Scatter plots  
-- Bar charts  
-- Correlation heatmap  
-- Insight cards  
+## 📸 App Overview  
+
+### 🔧 Preprocessing Flow  
+- Structured multi-page pipeline  
+- Auto-detection of data types  
+- Interactive visual previews  
+- Before/after comparison for every step  
+
+### 📊 Outputs  
+- Clean ML-ready dataset  
+- EDA summaries & visualizations  
+- Encoded & transformed data  
+- PCA components (optional)  
 
 ---
 
-### 📦 5. EDA Export Center
-- Select multiple plots  
-- Export full EDA report  
-- JSON summary  
-- Chart pack downloads  
+## ⚙ Tech Stack  
+
+- **Streamlit** — Web app & workflow UI  
+- **Pandas, NumPy** — Data manipulation  
+- **scikit-learn** — Encoding, scaling, PCA  
+- **Plotly** — Interactive EDA charts  
 
 ---
 
-### 🔢 6. Encoding & Transformation
-- Label Encoding  
-- One-Hot Encoding  
-- Manual Mapping  
-- Skewness correction (Log, SQRT, Reciprocal)  
-- Correlation handling  
-- PCA (2D & 3D preview)  
-
----
-
-### 📥 7. Download Center
-- Export cleaned dataset  
-- Export interim pipeline datasets  
-- Export EDA summary  
-- Download pipeline actions  
-
----
-
-## 🧱 Project Structure
-
-```
-CP2Project/
-│
-├── app.py
-├── requirements.txt
-├── .gitignore
-│
-├── app_pages/
-│   ├── p1_Data_Explorer.py
-│   ├── p2_Fix_Missing_Values.py
-│   ├── p2b_Fix_Semantic_Cleanup.py
-│   ├── p3_Outlier_Handling.py
-│   ├── p4_EDA_Core.py
-│   ├── p4b_EDA_Exports.py
-│   ├── p5_Encoding_and_Transformation.py
-│   └── p6_Download_Center.py
-│
-├── utils/
-│   ├── theme.py
-│   └── state_helpers.py
-│
-├── assets/
-├── models/
-└── venv/
-```
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|----------|------------|
-| UI Framework | Streamlit |
-| Data Handling | Pandas, NumPy |
-| Machine Learning | Scikit-learn |
-| Visualization | Plotly, Matplotlib, Seaborn |
-| Excel Support | openpyxl, xlrd |
-| Date Parsing | python-dateutil |
-
----
-
-## 📦 Installation
-
-### 1️⃣ Clone the repository:
+## ▶️ How to Run Locally  
 
 ```bash
-git clone <your_repo_link>
-cd CP2Project
-```
-
-### 2️⃣ Create a virtual environment:
-
-```bash
-python -m venv venv
-source venv/bin/activate   # Mac/Linux
-venv\Scripts\activate      # Windows
-```
-
-### 3️⃣ Install dependencies:
-
-```bash
+git clone https://github.com/Techy-Tushar/Preprocessing-Tool
+cd Preprocessing-Tool
 pip install -r requirements.txt
-```
-
-### 4️⃣ Run the app:
-
-```bash
 streamlit run app.py
 ```
 
 ---
 
-## 👨‍💻 Author
+## 🛠 Future Improvements  
 
-**Tushar Rathod**  
-Data Analyst • ML Practitioner  
-
-- GitHub: https://github.com/Techy-Tushar  
-- LinkedIn: https://www.linkedin.com/in/tusharathod  
+- Enhanced mixed-type detection & automatic normalization  
+- Currency and unit conversion engine  
+- Improved outlier auto-suggestions  
+- Advanced EDA exports (PDF / HTML reports)  
+- Heatmaps, pairplots, advanced multivariate visualizations  
+- Target encoding & advanced categorical encoding techniques  
+- Scree plots & PCA variance visuals  
+- Performance optimization for large datasets  
+- Mobile-responsive UI layout  
+- Deployment on Streamlit Cloud for public demo  
 
 ---
 
-## ⭐ If you like this project, please give it a star!
+## 📁 Project Structure  
 
+```
+Preprocessing-Tool/
+│── app.py
+│── requirements.txt
+│── README.md
+│── app_pages/
+│── utils/
+│── assets/        (optional)
+│── models/        (optional)
+```
 
+---
+
+## 📬 Contact  
+
+If you find this project useful or want to collaborate, feel free to reach out!
+
+**GitHub:** https://github.com/Techy-Tushar  
+**LinkedIn:** https://www.linkedin.com/in/tusharathod/
