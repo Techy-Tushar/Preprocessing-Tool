@@ -105,12 +105,12 @@ The app follows a **guided, end-to-end preprocessing workflow**, making it suita
 
 ## 📁 Project Structure
 
--Preprocessing-Tool/
--│── app.py
--│── requirements.txt
--│── README.md
--│── app_pages/
--│── utils/
+- Preprocessing-Tool/
+- │── app.py
+- │── requirements.txt
+- │── README.md
+- │── app_pages/
+- │── utils/
 
 ---
 
@@ -119,7 +119,7 @@ The app follows a **guided, end-to-end preprocessing workflow**, making it suita
 - Tushar Rathod.
 
 - This project is released under the MIT License.
-Any reuse, modification, or distribution must retain the original license
+- Any reuse, modification, or distribution must retain the original license
 and attribution.
 
 ---
