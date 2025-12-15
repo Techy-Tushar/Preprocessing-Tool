@@ -1,3 +1,12 @@
+# =====================================================
+# Smart Data Preprocessing Assistant
+# Original Author: Tushar Rathod
+# Year: 2025
+# GitHub: https://github.com/Techy-Tushar
+# License: MIT
+# =====================================================
+
+
 # app.py (fixed - preserves ALL original logic)
 import streamlit as st
 
