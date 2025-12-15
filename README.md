@@ -86,6 +86,9 @@ git clone https://github.com/Techy-Tushar/Preprocessing-Tool
 cd Preprocessing-Tool
 pip install -r requirements.txt
 streamlit run app.py
+
+---
+
 🛠 Future Enhancements
 Smarter semantic cleanup with automated normalization and unit handling
 
