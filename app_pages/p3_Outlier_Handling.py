@@ -448,12 +448,22 @@ def run_outlier_handling():
     if st.session_state["outlier_prev_df"]:
         if st.button("Undo Last Action", key="out_undo"):
             last = st.session_state["outlier_prev_df"].pop()
+
+            # Restore data
             st.session_state["df"] = last
-            # PIPELINE: update clean_df too
             st.session_state["clean_df"] = last.copy()
+
+            # Remove last report entry
             if st.session_state["outlier_report"]:
                 st.session_state["outlier_report"].pop()
-            st.success("Undo successful.")
+
+            # 🔄 RESET UI STATE (THIS IS THE KEY FIX)
+            st.session_state.pop("auto_plan", None)
+            st.session_state["outlier_configs"] = {}
+            st.session_state["outlier_page4_warning"] = False
+            st.session_state["outlier_page4_remaining"] = []
+
+            st.success("Undo successful. Returned to mode selection.")
             st.rerun()
 
     # DOWNLOAD SECTION

@@ -100,7 +100,7 @@ def section_encoding(df):
     # PREVIEW
     if enc_col != "--select--":
         st.markdown("### 🔍 Preview (Before → After)")
-        before = df[[enc_col]].head(15)
+        before = df[[enc_col]].head(50)
 
         if enc_method == "Label Encoding":
             le = LabelEncoder()
@@ -216,8 +216,8 @@ def section_skewness(df):
     after_vals = transformed.rename("After").reset_index(drop=True)
 
     preview_df = pd.DataFrame({
-        "Before": before_vals.head(20),
-        "After": after_vals.head(20)
+        "Before": before_vals.head(50),
+        "After": after_vals.head(50)
     })
     st.dataframe(preview_df, use_container_width=True)
 
