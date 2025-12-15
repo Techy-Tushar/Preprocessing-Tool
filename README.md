@@ -82,49 +82,49 @@ The app follows a **guided, end-to-end preprocessing workflow**, making it suita
 
 ## ▶️ Run Locally
 
-git clone https://github.com/Techy-Tushar/Preprocessing-Tool
-cd Preprocessing-Tool
-pip install -r requirements.txt
-streamlit run app.py
+- git clone https://github.com/Techy-Tushar/Preprocessing-Tool
+- cd Preprocessing-Tool
+- pip install -r requirements.txt
+- streamlit run app.py
 
 ---
 
-🛠 Future Enhancements
-Smarter semantic cleanup with automated normalization and unit handling
+## 🛠 Future Enhancements
 
-Advanced EDA exports (PDF / HTML), heatmaps, and multivariate insights
+- Smarter semantic cleanup with automated normalization and unit handling
 
-Universal dataset conversion across formats (CSV, Excel, JSON, Parquet, SQL-ready)
+- Advanced EDA exports (PDF / HTML), heatmaps, and multivariate insights
 
-Scalable web application with improved UI/UX and large-data performance
+- Universal dataset conversion across formats (CSV, Excel, JSON, Parquet, SQL-ready)
 
-Mobile-friendly and offline-capable version for local and secure environments
+- Scalable web application with improved UI/UX and large-data performance
 
----
-
-📁 Project Structure
-cpp
-Copy code
-Preprocessing-Tool/
-│── app.py
-│── requirements.txt
-│── README.md
-│── app_pages/
-│── utils/
+- Mobile-friendly and offline-capable version for local and secure environments
 
 ---
 
-🧑‍💻 Ownership & License
-Preprocessing Tool is originally designed and implemented by
-Tushar Rathod.
+## 📁 Project Structure
 
-This project is released under the MIT License.
+-Preprocessing-Tool/
+-│── app.py
+-│── requirements.txt
+-│── README.md
+-│── app_pages/
+-│── utils/
+
+---
+
+## 🧑‍💻 Ownership & License
+- Preprocessing Tool is originally designed and implemented by
+- Tushar Rathod.
+
+- This project is released under the MIT License.
 Any reuse, modification, or distribution must retain the original license
 and attribution.
 
 ---
 
-📬 Contact
-GitHub: https://github.com/Techy-Tushar
+## 📬 Contact
+- GitHub: https://github.com/Techy-Tushar
 
-LinkedIn: https://www.linkedin.com/in/tusharathod/
+- LinkedIn: https://www.linkedin.com/in/tusharathod/
