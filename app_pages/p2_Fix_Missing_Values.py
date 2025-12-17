@@ -40,18 +40,15 @@ def perform_undo():
 # MAIN PAGE
 # ---------------------------------------------------------------
 def run_fix_missing_values():
-
-    inject_theme()
-
-    # ---------------- HEADER ----------------
     st.markdown("""
     <div class="page-title-box">
         <span style="font-size:28px;font-weight:800;">🧹 Fix Missing Values</span>
         <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-            Handle missing values safely with preview and undo support.
+            Handle missing values safely with preview, undo, and smart suggestions.
         </div>
     </div>
     """, unsafe_allow_html=True)
+
     st.divider()
 
     # ---------------- DATASET RESOLUTION ----------------

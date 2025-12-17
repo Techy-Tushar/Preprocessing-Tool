@@ -551,17 +551,17 @@ def is_column_fully_handled(col):
 # UI pieces: intro and main page logic
 # ---------------------------
 def render_intro_box():
-    st.markdown("<h1 style='margin:0'>🧠 Semantic Cleanup</h1>", unsafe_allow_html=True)
-    st.write("""
-**What this page does (short):**  
-Semantic Cleanup fixes dirty or inconsistent *values* inside columns — it standardizes numeric/text representations,
-removes noise (symbols, units, punctuation), groups similar patterns, and lets you preview & apply safe fixes.
-This page performs **value cleaning only** (not encoding). After changes are applied the cleaned dataframe is forwarded to Outlier Handling.
-- Preview changes before apply  
-- Undo any step (reset to pre-semantic state)  
-- Summary of every action in the sidebar
-    """)
-    st.markdown("---")
+    st.markdown("""
+    <div class="page-title-box">
+        <span style="font-size:28px;font-weight:800;">🧠 Semantic Cleanup</span>
+        <div style="margin-top:6px;font-size:14px;opacity:0.85;">
+            Clean inconsistent values, normalize patterns, and standardize semantics.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.divider()
+
 
 def run_semantic_cleanup_page(df):
     # show last action message (persistent) if present

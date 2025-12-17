@@ -90,26 +90,11 @@ def draw_clean_correlation_heatmap(df):
 
 # ---------------- MAIN PAGE ----------------
 def run_eda_core():
-    # ---- THEME + PAGE CONFIG ----
-    inject_theme()
-
-    try:
-        st.set_page_config(
-            page_title="EDA — Core",
-            page_icon="📊",
-            layout="wide"
-        )
-    except:
-        pass
-
-    # ---- PAGE TITLE CARD ----
     st.markdown("""
     <div class="page-title-box">
-        <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:28px;font-weight:800;">📊 EDA — Core Analysis</span>
-        </div>
+        <span style="font-size:28px;font-weight:800;">📊 EDA — Core Analysis</span>
         <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-            Explore distributions, detect patterns, and understand relationships between variables.
+            Explore distributions, patterns, and relationships between variables.
         </div>
     </div>
     """, unsafe_allow_html=True)

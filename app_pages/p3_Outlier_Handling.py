@@ -125,17 +125,15 @@ def init_session():
 # MAIN PAGE FUNCTION
 # ---------------------------------------------------------
 def run_outlier_handling():
-    # ---- INITIALIZE SESSION STATE FIRST ----
-    init_session()
-    # --- PAGE TITLE ---
     st.markdown("""
     <div class="page-title-box">
         <span style="font-size:28px;font-weight:800;">📉 Outlier Handling</span>
         <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-            Detect and fix outliers using IQR, Z-score or custom limits.
+            Detect and treat outliers using IQR, Z-score, or custom thresholds.
         </div>
     </div>
     """, unsafe_allow_html=True)
+
     st.divider()
 
     df = st.session_state.get("df")

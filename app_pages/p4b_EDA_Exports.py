@@ -246,15 +246,14 @@ def draw_clean_correlation_heatmap(df, title="Correlation Heatmap"):
 
 def run_eda_exports():
     st.markdown("""
-      <div class="page-title-box">
-          <div style="display:flex;align-items:center;gap:12px;">
-              <span style="font-size:28px;font-weight:800;">📥 EDA Export Center</span>
-          </div>
-          <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-              Generate previews → produce PNG exports → download ZIP.
-          </div>
-      </div>
-      """, unsafe_allow_html=True)
+    <div class="page-title-box">
+        <span style="font-size:28px;font-weight:800;">📥 EDA Export Center</span>
+        <div style="margin-top:6px;font-size:14px;opacity:0.85;">
+            Generate previews, export plots, and download analysis assets.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.divider()
 
     # ------------------ DATASET CHECK ------------------

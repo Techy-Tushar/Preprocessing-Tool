@@ -3,6 +3,20 @@ import pandas as pd
 
 def run_home():
 
+    st.markdown("""
+    <style>
+    /* Remove Streamlit default top padding */
+    .block-container {
+        padding-top: 1.5rem !important;
+    }
+
+    /* Allow header glow to breathe */
+    header { 
+        visibility: hidden;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # -------------------------------------------------
     # IMPORTANT: MUST NOT set page_config here.
     # It is already set globally in app.py
@@ -78,6 +92,8 @@ def run_home():
             </div>
         </div>
     """, unsafe_allow_html=True)
+
+
 
     st.divider()
 

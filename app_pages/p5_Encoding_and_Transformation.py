@@ -671,19 +671,15 @@ def section_summary_and_navigation(df):
 # PAGE 5 MAIN FUNCTION
 # ======================================================
 def run_encoding_transformation():
-    try:
-        inject_theme()
-    except:
-        pass
-
     st.markdown("""
-        <div class="page-title-box">
-            <span style="font-size:28px;font-weight:800;">🔢 Encoding & Transformation</span>
-            <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-                Convert categorical features, correct skewness, fix correlation and apply PCA.
-            </div>
+    <div class="page-title-box">
+        <span style="font-size:28px;font-weight:800;">🔢 Encoding & Transformation</span>
+        <div style="margin-top:6px;font-size:14px;opacity:0.85;">
+            Encode categorical features, correct skewness, handle correlation, and apply PCA.
         </div>
+    </div>
     """, unsafe_allow_html=True)
+
     st.divider()
 
     df = st.session_state.get("clean_df")

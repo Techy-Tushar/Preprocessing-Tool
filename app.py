@@ -20,6 +20,160 @@ try:
 except Exception:
     pass
 
+# ---------------- GLOBAL TITLE POSITION & SPACING (ALL PAGES) ----------------
+st.markdown("""
+<style>
+
+/* Keep header alive but invisible */
+header {
+    visibility: hidden;
+}
+
+/* Maintain space so sidebar toggle works */
+header [data-testid="stToolbar"] {
+    visibility: visible;
+}
+
+/* Global top padding so titles are not clipped */
+.block-container {
+    padding-top: 3.2rem !important;
+}
+
+/* Unified page title container */
+.page-title-box {
+    margin-top: 1.8rem !important;
+    margin-bottom: 1.4rem !important;
+    padding: 18px 22px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(140,80,255,0.18), rgba(60,140,255,0.15));
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# ---------------- SIDEBAR FINAL BALANCE FIX ----------------
+st.markdown("""
+<style>
+
+/* Sidebar expanded */
+section[data-testid="stSidebar"][aria-expanded="true"] {
+    width: 210px !important;
+}
+
+/* Sidebar collapsed */
+section[data-testid="stSidebar"][aria-expanded="false"] {
+    width: 0px !important;
+}
+
+/* Remove invisible gap */
+section[data-testid="stSidebar"][aria-expanded="false"] > div {
+    display: none;
+}
+
+/* Smooth animation */
+section[data-testid="stSidebar"] {
+    transition: width 0.25s ease;
+}
+
+/* Reduce top & bottom padding of sidebar */
+section[data-testid="stSidebar"] > div {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+}
+
+/* Compact buttons (HEIGHT FIX) */
+section[data-testid="stSidebar"] button {
+    padding: 0.28rem 0.55rem !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    border-radius: 9px !important;
+}
+
+/* Reduce space between nav buttons */
+section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {
+    gap: 2px !important;
+}
+
+/* Compact section headers */
+section[data-testid="stSidebar"] h3 {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    font-size: 15px !important;
+}
+
+/* Compact divider */
+section[data-testid="stSidebar"] hr {
+    margin: 6px 0 !important;
+}
+
+/* Disable sidebar scrolling */
+section[data-testid="stSidebar"] {
+    overflow: hidden !important;
+}
+
+/* Smooth transitions */
+section[data-testid="stSidebar"] button {
+    transition: box-shadow 0.25s ease, background 0.25s ease;
+}
+
+/* Active page — MINI TITLE CARD STYLE */
+section[data-testid="stSidebar"] button[kind="secondary"] {
+    background: linear-gradient(
+        135deg,
+        rgba(120,90,255,0.55),
+        rgba(200,90,150,0.55),
+        rgba(90,160,220,0.55)
+    ) !important;
+
+    border-radius: 10px;
+
+    /* Soft depth like title card */
+    box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.35),
+        inset 0 0 0 1px rgba(255,255,255,0.28);
+
+    color: #ffffff !important;
+    font-weight: 600;
+
+    position: relative;
+    overflow: hidden;
+}
+
+
+/* Gradient border glow — same language as title */
+section[data-testid="stSidebar"] button[kind="secondary"]::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 11px;
+    background: linear-gradient(
+        135deg,
+        rgba(140,80,255,0.9),
+        rgba(220,90,150,0.9),
+        rgba(90,170,255,0.9)
+    );
+    z-index: -1;
+    filter: blur(6px);
+    opacity: 0.7;
+}
+
+/* Hover effect (inactive only) */
+section[data-testid="stSidebar"] button:hover {
+    box-shadow: 0 0 20px rgba(120,120,255,0.35);
+}
+
+/* Hide sidebar resize handle */
+div[data-testid="stSidebarResizer"] {
+    display: none;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+
 # ---------------- MASTER SESSION KEYS (initialize early) ----------------
 st.session_state.setdefault("original_df", None)
 st.session_state.setdefault("clean_df", None)
@@ -38,6 +192,9 @@ try:
     inject_theme()
 except Exception:
     pass
+
+# ---------------- RESET HELPER ----------------
+from utils.state_helpers import reset_pipeline
 
 # ---------------- IMPORT PAGES ----------------
 from app_pages.home import run_home
@@ -71,15 +228,45 @@ PAGE_ORDER = [
 
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
-    st.markdown("## 📑 Navigation")
+    # --- RESET PIPELINE (always visible)
+    st.subheader("⚙ App Controls")
+
+    if st.button("🔄 Reset Pipeline", key="reset_pipeline_btn"):
+        st.session_state["confirm_reset"] = True
+
+    if st.session_state.get("confirm_reset", False):
+        st.warning("This will clear all progress and uploaded data.")
+        col1, col2 = st.columns(2)
+
+        if col1.button("✅ Yes, reset", key="confirm_reset_yes"):
+            if st.session_state.get("original_df") is None:
+                st.warning("📂 Please upload a dataset first.")
+                st.session_state["confirm_reset"] = False
+            else:
+                reset_pipeline()
+                st.rerun()
+
+        if col2.button("❌ Cancel", key="confirm_reset_no"):
+            st.session_state["confirm_reset"] = False
+
+    st.markdown("<hr style='margin: 8px 0;'>", unsafe_allow_html=True)
+
+    st.markdown(
+        "<h3 style='margin-top: 8px; margin-bottom: 10px;'>📄 Navigation</h3>",
+        unsafe_allow_html=True
+    )
 
     for key, label in PAGE_ORDER:
-        if st.session_state.current_page == key:
-            st.markdown(f"### 👉 **{label}**")
-        else:
-            if st.button(label, key=f"nav_{key}"):
-                st.session_state.current_page = key
-                st.rerun()
+        is_active = st.session_state.current_page == key
+
+        if st.button(
+                label,
+                key=f"nav_{key}",
+                use_container_width=True,
+                type="secondary" if is_active else "primary"
+        ):
+            st.session_state.current_page = key
+            st.rerun()
 
     st.markdown("---")
 
