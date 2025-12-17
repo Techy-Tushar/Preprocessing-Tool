@@ -40,6 +40,15 @@ def simple_trendline(x, y):
     except:
         return None, None
 
+def is_effectively_numeric(series, threshold=0.9):
+    """
+    Treat column as numeric if >= threshold values can be converted to numbers
+    """
+    coerced = pd.to_numeric(series, errors="coerce")
+    ratio = coerced.notna().mean()
+    return ratio >= threshold
+
+
 
 # ---------------- Page Session Init ----------------
 def init_eda_session():
@@ -81,26 +90,11 @@ def draw_clean_correlation_heatmap(df):
 
 # ---------------- MAIN PAGE ----------------
 def run_eda_core():
-    # ---- THEME + PAGE CONFIG ----
-    inject_theme()
-
-    try:
-        st.set_page_config(
-            page_title="EDA — Core",
-            page_icon="📊",
-            layout="wide"
-        )
-    except:
-        pass
-
-    # ---- PAGE TITLE CARD ----
     st.markdown("""
     <div class="page-title-box">
-        <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:28px;font-weight:800;">📊 EDA — Core Analysis</span>
-        </div>
+        <span style="font-size:28px;font-weight:800;">📊 EDA — Core Analysis</span>
         <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-            Explore distributions, detect patterns, and understand relationships between variables.
+            Explore distributions, patterns, and relationships between variables.
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -116,10 +110,18 @@ def run_eda_core():
 
 
     # split cols
-    num_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
-    cat_cols = [c for c in df.columns if not pd.api.types.is_numeric_dtype(df[c])]
+    num_cols = []
+    cat_cols = []
 
-
+    for c in df.columns:
+        if pd.api.types.is_numeric_dtype(df[c]):
+            num_cols.append(c)
+        elif is_effectively_numeric(df[c]):
+            # force numeric conversion
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+            num_cols.append(c)
+        else:
+            cat_cols.append(c)
 
     # ---------------- Overview Metrics ----------------
     c1, c2, c3 = st.columns(3)

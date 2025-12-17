@@ -100,7 +100,7 @@ def section_encoding(df):
     # PREVIEW
     if enc_col != "--select--":
         st.markdown("### 🔍 Preview (Before → After)")
-        before = df[[enc_col]].head(15)
+        before = df[[enc_col]].head(50)
 
         if enc_method == "Label Encoding":
             le = LabelEncoder()
@@ -216,8 +216,8 @@ def section_skewness(df):
     after_vals = transformed.rename("After").reset_index(drop=True)
 
     preview_df = pd.DataFrame({
-        "Before": before_vals.head(20),
-        "After": after_vals.head(20)
+        "Before": before_vals.head(50),
+        "After": after_vals.head(50)
     })
     st.dataframe(preview_df, use_container_width=True)
 
@@ -671,19 +671,15 @@ def section_summary_and_navigation(df):
 # PAGE 5 MAIN FUNCTION
 # ======================================================
 def run_encoding_transformation():
-    try:
-        inject_theme()
-    except:
-        pass
-
     st.markdown("""
-        <div class="page-title-box">
-            <span style="font-size:28px;font-weight:800;">🔢 Encoding & Transformation</span>
-            <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-                Convert categorical features, correct skewness, fix correlation and apply PCA.
-            </div>
+    <div class="page-title-box">
+        <span style="font-size:28px;font-weight:800;">🔢 Encoding & Transformation</span>
+        <div style="margin-top:6px;font-size:14px;opacity:0.85;">
+            Encode categorical features, correct skewness, handle correlation, and apply PCA.
         </div>
+    </div>
     """, unsafe_allow_html=True)
+
     st.divider()
 
     df = st.session_state.get("clean_df")

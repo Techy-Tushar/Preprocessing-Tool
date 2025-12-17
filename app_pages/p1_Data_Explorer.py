@@ -2,16 +2,15 @@ import streamlit as st
 import pandas as pd
 
 def run_data_explorer():
-
-    # ---- TITLE ----
     st.markdown("""
-    <div class='page-title-box'>
-        <span style='font-size:28px;font-weight:800;'>📂 Data Explorer</span>
-        <div style='margin-top:6px;font-size:14px;opacity:0.85;'>
-            Inspect dataset structure, types, missing values, and quick profiling.
+    <div class="page-title-box">
+        <span style="font-size:28px;font-weight:800;">📂 Data Explorer</span>
+        <div style="margin-top:6px;font-size:14px;opacity:0.85;">
+            Inspect dataset structure, data types, missing values, and quick profiling.
         </div>
     </div>
     """, unsafe_allow_html=True)
+
     st.divider()
 
     # ---- CHECK DATA ----

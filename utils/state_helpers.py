@@ -115,3 +115,14 @@ def page_has_changes(page_id):
     Returns True if the page has any saved changes.
     """
     return len(st.session_state.page_changes.get(page_id, [])) > 0
+
+def reset_pipeline():
+    """
+    Completely reset the app state.
+    Clears all session_state keys safely.
+    """
+    keep_keys = {"theme"}  # optional
+    for key in list(st.session_state.keys()):
+        if key not in keep_keys:
+            del st.session_state[key]
+

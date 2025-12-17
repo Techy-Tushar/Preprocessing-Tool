@@ -344,16 +344,15 @@ def generate_pdf_summary(text_summary: str) -> bytes:
 # PAGE 6 — MAIN FUNCTION
 # ===================================================================
 def run_download_center():
-
-    # ---------- TITLE ----------
     st.markdown("""
-        <div class="page-title-box">
-            <span style="font-size:28px;font-weight:800;">📥 Download Center</span>
-            <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-                Export your cleaned dataset, summaries, and full report.
-            </div>
+    <div class="page-title-box">
+        <span style="font-size:28px;font-weight:800;">📥 Download Center</span>
+        <div style="margin-top:6px;font-size:14px;opacity:0.85;">
+            Export cleaned datasets, summaries, and full preprocessing reports.
         </div>
+    </div>
     """, unsafe_allow_html=True)
+
     st.divider()
 
     df = st.session_state.get("clean_df")
