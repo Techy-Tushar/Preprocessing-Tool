@@ -54,15 +54,17 @@ The app follows a **guided, end-to-end preprocessing workflow**, making it suita
 ---
 
 ## 📸 App Overview
-
-### 🔧 Preprocessing Flow
+### Home
+![Home Page](assets/screenshots/home.png)
+---
+## 🔧 Preprocessing Flow
 - Structured multi-page pipeline
 - Automatic data-type detection
 - Interactive previews before applying changes
 - Before/after comparison at every step
 - Undo support for safe experimentation
 
-### 📊 Outputs
+## 📊 Outputs
 - Clean, ML-ready dataset
 - EDA summaries and visualizations
 - Encoded & transformed features
