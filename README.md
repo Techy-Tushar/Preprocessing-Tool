@@ -10,11 +10,12 @@ The app follows a **guided, end-to-end preprocessing workflow**, making it suita
 
 ---
 
-## 🚀 Live App
-🔗 **Public Demo (testing phase):** _Coming soon_
+## 🌐 Live Demo
 
-> The live demo demonstrates the end-to-end preprocessing workflow using real-world datasets.
+🔗 **Live Application**: https://preprocessing-tool.streamlit.app/
 
+> The live demo is deployed on Streamlit Cloud and currently runs from a dedicated testing branch (`deploy-test`) for UI validation and iteration.  
+> The `main` branch contains the stable and reviewed version of the codebase.
 ---
 
 ## 🔄 Workflow
