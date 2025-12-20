@@ -1,368 +1,527 @@
-# ---------------------------------------------------------------
-# PAGE 2 — FIX MISSING VALUES (FINAL, SPEC-COMPLIANT)
-# ---------------------------------------------------------------
+# ===========================================================
+# PAGE 2 — FIX MISSING VALUES
+# FINAL • STABLE • TRANSPARENT • MESSY-DATA SAFE
+# ===========================================================
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 
-try:
-    from utils.theme import inject_theme
-except Exception:
-    def inject_theme():
-        return
 
+# ===========================================================
+# UNDO — SINGLE LEVEL (BACK TO STEP 3)
+# ===========================================================
 
-# ---------------------------------------------------------------
-# UNDO HELPER
-# ---------------------------------------------------------------
 def perform_undo():
-    if "last_cleaned_df" in st.session_state:
-        last = st.session_state.last_cleaned_df.copy()
+    if "step3_df" in st.session_state:
+        restored = st.session_state.step3_df.copy()
 
-        st.session_state.clean_df = last.copy()
-        st.session_state.cleaned_df = last.copy()
-        st.session_state.df = last.copy()
+        st.session_state.df = restored.copy()
+        st.session_state.clean_df = restored.copy()
 
-        st.session_state.page_stage = "editing"
-        st.session_state.cleaned = False
-        st.session_state.missing_summary = {}
-
-        st.session_state.auto_state = None
-        st.session_state.auto_cols_to_drop = []
+        st.session_state.missing_actions_log = []
+        st.session_state.missing_applied = False
 
         st.rerun()
     else:
-        st.info("No previous state available to undo.")
+        st.info("Nothing to undo yet.")
 
 
-# ---------------------------------------------------------------
+# ===========================================================
+# PREVIEW RENDER HELPER
+# ===========================================================
+
+def render_before_after_preview(before_df, after_df, cols):
+    """
+    Renders before vs after preview.
+    ≤4 cols  -> side-by-side
+    >4 cols  -> line-by-line
+    """
+    if not cols:
+        return
+
+    if len(cols) <= 4:
+        b1, b2 = st.columns(2)
+
+        with b1:
+            st.markdown("**Before**")
+            st.dataframe(
+                before_df[cols],
+                width="stretch",
+                height=350
+            )
+
+        with b2:
+            st.markdown("**After**")
+            st.dataframe(
+                after_df[cols],
+                width="stretch",
+                height=350
+            )
+
+    else:
+        st.markdown("### Before")
+        st.dataframe(
+            before_df[cols],
+            width="stretch",
+            height=350
+        )
+
+        st.markdown("### After")
+        st.dataframe(
+            after_df[cols],
+            width="stretch",
+            height=350
+        )
+
+
+
+# ===========================================================
 # MAIN PAGE
-# ---------------------------------------------------------------
+# ===========================================================
+
 def run_fix_missing_values():
+
+    # -------------------------------------------------------
+    # SESSION STATE INIT (DEFENSIVE)
+    # -------------------------------------------------------
+    st.session_state.setdefault("missing_actions_log", [])
+    st.session_state.setdefault("missing_applied", False)
+
+    # -------------------------------------------------------
+    # HEADER
+    # -------------------------------------------------------
     st.markdown("""
-    <div class="page-title-box">
-        <span style="font-size:28px;font-weight:800;">🧹 Fix Missing Values</span>
-        <div style="margin-top:6px;font-size:14px;opacity:0.85;">
-            Handle missing values safely with preview, undo, and smart suggestions.
+        <div class="page-title-box">
+            <span style="font-size:28px;font-weight:800;">🧹 Fix Missing Values</span>
+            <div style="margin-top:6px;font-size:14px;opacity:0.85;">
+                Handle missing values safely with preview, undo, and transparency.
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     st.divider()
-
-    # ---------------- DATASET RESOLUTION ----------------
-    if st.session_state.get("clean_df") is not None:
+        # -------------------------------------------------------
+    # DATASET RESOLUTION (SINGLE SOURCE OF TRUTH)
+    # -------------------------------------------------------
+    if st.session_state.get("missing_applied"):
         df = st.session_state.clean_df.copy()
+
+    elif "step3_df" in st.session_state:
+        df = st.session_state.step3_df.copy()
+
     elif st.session_state.get("df") is not None:
         df = st.session_state.df.copy()
+
     elif st.session_state.get("original_df") is not None:
         df = st.session_state.original_df.copy()
-    elif st.session_state.get("raw_df") is not None:
-        df = st.session_state.raw_df.copy()
+
     else:
         st.warning("⚠️ Please upload a dataset first.")
         st.stop()
 
-    initial_shape = df.shape
+    # -------------------------------------------------------
+    # STEP 1 — MISSING VALUES OVERVIEW
+    # -------------------------------------------------------
+    st.subheader("📊 Step 1: Missing Values Overview")
 
-    # ---------------- STATE INIT ----------------
-    st.session_state.setdefault("page_stage", "editing")
-    st.session_state.setdefault("cleaned", False)
-    st.session_state.setdefault("missing_summary", {})
-    st.session_state.setdefault("auto_state", None)
-    st.session_state.setdefault("auto_cols_to_drop", [])
+    missing_summary = []
+    total_rows = len(df)
 
-    st.session_state.setdefault("summaries", {})
-    st.session_state["summaries"].setdefault("missing", {})
+    for col in df.columns:
+        miss_count = int(df[col].isna().sum())
+        if miss_count > 0:
+            missing_summary.append([
+                col,
+                miss_count,
+                round((miss_count / total_rows) * 100, 2)
+            ])
 
-    # ===========================================================
-    # EDITING STAGE
-    # ===========================================================
-    if st.session_state.page_stage == "editing":
+    active_missing_cols = [row[0] for row in missing_summary]
 
-        missing_cols = df.columns[df.isnull().any()].tolist()
-        missing_pct = (df.isnull().mean() * 100).round(2)
-
-        # ---------- NO MISSING (GUARDED) ----------
-        if not missing_cols and not st.session_state.cleaned:
-            st.success("🎉 No missing values found.")
-            st.session_state.page_stage = "completed"
-            st.session_state.cleaned = True
-            st.session_state.clean_df = df.copy()
-            st.session_state.cleaned_df = df.copy()
-            st.session_state.df = df.copy()
-            st.rerun()
-
-        # ---------- SUMMARY ----------
-        st.subheader("📌 Columns With Missing Values")
-        st.dataframe(
-            pd.DataFrame({
-                "Column": missing_cols,
-                "Missing Count": df[missing_cols].isnull().sum(),
-                "Missing %": missing_pct[missing_cols]
-            }),
-            use_container_width=True
+    if missing_summary:
+        miss_df = pd.DataFrame(
+            missing_summary,
+            columns=["Column", "Missing Count", "Missing %"]
         )
-        st.divider()
+        st.dataframe(miss_df, width="stretch")
+    else:
+        st.success("✅ No missing values found in dataset.")
 
-        st.subheader("🟦 Step 1: Select Columns to Clean")
+    # -------------------------------------------------------
+    # STEP 2 — COLUMN TYPE DIAGNOSIS
+    # -------------------------------------------------------
+    st.subheader("🧠 Step 2: Column Type Diagnosis")
 
-        selection_mode = st.radio(
-            "",
-            [
-                "All columns with missing values",
-                "Only numerical columns",
-                "Only categorical columns",
-                "Select specific columns"
-            ]
-        )
+    numeric_cols, cat_cols, mix_cols = [], [], []
+    type_rows = []
 
-        if selection_mode == "All columns with missing values":
-            target_cols = missing_cols
-        elif selection_mode == "Only numerical columns":
-            target_cols = [c for c in missing_cols if pd.api.types.is_numeric_dtype(df[c])]
-            if len(target_cols) == 0:
-                st.info("✔ No numeric columns with missing values.")
-                st.stop()
-        elif selection_mode == "Only categorical columns":
-            target_cols = [c for c in missing_cols if not pd.api.types.is_numeric_dtype(df[c])]
-            if len(target_cols) == 0:
-                st.info("✔ No categorical columns with missing values.")
-                st.stop()
+    for col in active_missing_cols:
+        raw = df[col]
+        as_str = raw.astype(str)
+
+        numeric_series = pd.to_numeric(raw, errors="coerce")
+        numeric_ratio = numeric_series.notna().mean()
+        has_digit_strings = as_str.str.contains(r"\d", regex=True).any()
+
+        if numeric_ratio >= 0.7:
+            numeric_cols.append(col)
+            detected = "Numeric"
+            reason = "100% numeric values"
+
+        elif numeric_ratio <= 0.3 and not has_digit_strings:
+            cat_cols.append(col)
+            detected = "Categorical"
+            reason = "100% categorical values"
+
         else:
-            target_cols = st.multiselect("Select columns:", options=missing_cols, default=missing_cols)
+            mix_cols.append(col)
+            detected = "Mixed"
+            reason = f"{round(numeric_ratio*100,1)}% numeric values with semantic patterns"
 
-        if not target_cols:
-            st.warning("Select at least one column.")
-            st.stop()
+        type_rows.append([col, detected, reason])
 
-        st.info(f"✔ Selected Columns: {target_cols}")
-        st.divider()
+    if type_rows:
+        type_df = pd.DataFrame(
+            type_rows,
+            columns=["Column", "Detected Type", "Reason"]
+        )
+        st.dataframe(type_df, width="stretch")
+    else:
+        st.info("No columns require diagnosis.")
 
+    # -------------------------------------------------------
+    # STEP 3 — COLUMN GROUPS & STRATEGY
+    # -------------------------------------------------------
+    st.subheader("🗂 Step 3: Column Groups & Handling Strategy")
 
-        # =======================================================
-        # STEP 2 — MODE
-        # =======================================================
-        st.subheader("🟩 Step 2: Choose Cleaning Mode")
-        mode = st.radio("", ["Automatic (Recommended)", "Manual (Smart)"])
+    c1, c2, c3 = st.columns(3)
 
-        # =======================================================
-        # AUTOMATIC MODE
-        # =======================================================
-        if mode == "Automatic (Recommended)":
+    with c1:
+        st.markdown("### 🟦 Numeric Columns")
+        st.write(numeric_cols if numeric_cols else "—")
+        st.caption("Mean • Median • Mode • Zero • Custom • Drop rows")
 
-            st.markdown("""
-            **Automatic Rules**
-            - Numeric → Median
-            - Categorical → Mode
-            - Columns with >40% missing require confirmation to drop
-            """)
+    with c2:
+        st.markdown("### 🟨 Categorical Columns")
+        st.write(cat_cols if cat_cols else "—")
+        st.caption("Mode • Custom • Drop rows")
 
-            if st.button("✨ Apply Automatic Cleaning"):
-                st.session_state.auto_cols_to_drop = [
-                    c for c in target_cols if missing_pct[c] > 40
-                ]
-                st.session_state.auto_state = (
-                    "confirm" if st.session_state.auto_cols_to_drop else "yes"
-                )
+    with c3:
+        st.markdown("### 🟥 Mixed Columns")
+        st.write(mix_cols if mix_cols else "—")
+        st.caption("Temporary fill → Semantic Cleanup later")
 
-            if st.session_state.auto_state == "confirm":
-                st.warning("Columns with more than 40% missing values:")
-                st.write(st.session_state.auto_cols_to_drop)
+    st.divider()
 
-                c1, c2 = st.columns(2)
-                if c1.button("YES – Drop Columns"):
-                    st.session_state.auto_state = "yes"
-                if c2.button("NO – Keep Columns"):
-                    st.session_state.auto_state = "no"
+    if "step3_df" not in st.session_state and active_missing_cols:
+        st.session_state.step3_df = df.copy()
 
-            if st.session_state.auto_state in ["yes", "no"]:
+    # =======================================================
+    # STEP 4 — HANDLE MISSING VALUES
+    # =======================================================
 
-                preview_df = df.copy()
-                summary = {}
+    # ======================
+    # 4A — NUMERIC
+    # ======================
+    with st.expander("🟦 Handle Numeric Columns", expanded=False):
 
-                if st.session_state.auto_state == "yes":
-                    for c in st.session_state.auto_cols_to_drop:
-                        preview_df = preview_df.drop(columns=[c])
-                        summary[c] = "Dropped column (>40% missing)"
+        avail = [c for c in numeric_cols if c in active_missing_cols]
 
-                for c in target_cols:
-                    if c not in preview_df.columns:
-                        continue
-                    if pd.api.types.is_numeric_dtype(preview_df[c]):
-                        preview_df[c] = preview_df[c].fillna(preview_df[c].median())
-                        summary[c] = "Filled with Median"
-                    else:
-                        preview_df[c] = preview_df[c].fillna(preview_df[c].mode()[0])
-                        summary[c] = "Filled with Mode"
-
-                preview_cols = [c for c in target_cols if c in preview_df.columns]
-
-                b1, b2 = st.columns(2)
-                with b1:
-                    st.markdown("**Before**")
-                    st.dataframe(df[preview_cols].head(20))
-                with b2:
-                    st.markdown("**After**")
-                    st.dataframe(preview_df[preview_cols].head(20))
-
-                if st.button("✅ Confirm & Apply Automatic Cleaning"):
-                    st.session_state.last_cleaned_df = df.copy()
-                    st.session_state.clean_df = preview_df.copy()
-                    st.session_state.cleaned_df = preview_df.copy()
-                    st.session_state.df = preview_df.copy()
-                    st.session_state.cleaned = True
-                    st.session_state.page_stage = "completed"
-                    st.session_state.missing_summary = {
-                        "mode": "Automatic",
-                        "columns": summary
-                    }
-
-                    # ---- send missing-value summary to Page 6 ----
-                    st.session_state["summaries"]["missing"]["last_action"] = {
-                        "mode": "Automatic",
-                        "initial_shape": initial_shape,
-                        "final_shape": preview_df.shape,
-                        "Dropped Columns": [
-                            c for c, v in summary.items() if "Dropped" in v
-                        ],
-                        "Filled Columns": {
-                            c: {"method": v}
-                            for c, v in summary.items() if "Filled" in v
-                        }
-                    }
-                    st.rerun()
-
-        # =======================================================
-        # MANUAL MODE
-        # =======================================================
-        if mode == "Manual (Smart)":
-
-            st.subheader("🧰 Step 3: Manual Cleaning")
-
-            manual_actions = {}
-
-            for col in target_cols:
-                if pd.api.types.is_numeric_dtype(df[col]):
-                    options = [
-                        "Fill with Mean",
-                        "Fill with Median",
-                        "Fill with Mode",
-                        "Fill with Zero",
-                        "Fill with Custom Value",
-                        "Drop Rows with Missing"
-                    ]
-                else:
-                    options = [
-                        "Fill with Mode",
-                        "Drop Rows with Missing"
-                    ]
-
-                manual_actions[col] = st.selectbox(col, options, key=f"manual_{col}")
-
-                if manual_actions[col] == "Fill with Custom Value":
-                    st.text_input(f"Custom value for {col}", key=f"custom_{col}")
+        if not avail:
+            st.info("No numeric columns pending.")
+        else:
+            sel = st.multiselect("Select numeric columns", avail, key="num_sel")
+            method = st.selectbox(
+                "Choose method",
+                [
+                    "Fill with Mean",
+                    "Fill with Median",
+                    "Fill with Mode",
+                    "Fill with Zero",
+                    "Fill with Custom Value",
+                    "Drop Rows"
+                ],
+                key="num_method"
+            )
 
             preview_df = df.copy()
-            summary = {}
+            fill_values = {}
 
-            for col, action in manual_actions.items():
-                if action == "Drop Rows with Missing":
+            for col in sel:
+                if method == "Drop Rows":
                     preview_df = preview_df[preview_df[col].notna()]
-                    summary[col] = "Dropped rows with missing values"
-                elif action == "Fill with Mean":
-                    preview_df[col] = preview_df[col].fillna(preview_df[col].mean())
-                    summary[col] = "Filled with Mean"
-                elif action == "Fill with Median":
-                    preview_df[col] = preview_df[col].fillna(preview_df[col].median())
-                    summary[col] = "Filled with Median"
-                elif action == "Fill with Mode":
-                    preview_df[col] = preview_df[col].fillna(preview_df[col].mode()[0])
-                    summary[col] = "Filled with Mode"
-                elif action == "Fill with Zero":
-                    preview_df[col] = preview_df[col].fillna(0)
-                    summary[col] = "Filled with Zero"
-                elif action == "Fill with Custom Value":
-                    preview_df[col] = preview_df[col].fillna(st.session_state.get(f"custom_{col}"))
-                    summary[col] = "Filled with Custom Value"
+                    continue
 
-            preview_cols = [c for c in target_cols if c in preview_df.columns]
+                s = pd.to_numeric(preview_df[col], errors="coerce")
 
-            b1, b2 = st.columns(2)
-            with b1:
-                st.markdown("**Before**")
-                st.dataframe(df[preview_cols].head(20))
-            with b2:
-                st.markdown("**After**")
-                st.dataframe(preview_df[preview_cols].head(20))
+                if method == "Fill with Mean":
+                    val = s.mean()
+                elif method == "Fill with Median":
+                    val = s.median()
+                elif method == "Fill with Mode":
+                    val = preview_df[col].mode().iloc[0]
+                elif method == "Fill with Zero":
+                    val = 0
+                else:
+                    val = st.text_input(f"Custom value for {col}", key=f"num_custom_{col}")
 
-            if st.button("🚀 Apply Manual Cleaning"):
-                st.session_state.last_cleaned_df = df.copy()
+                fill_values[col] = val
+                preview_df[col] = preview_df[col].fillna(val)
+
+            if fill_values:
+                st.markdown("#### 🔍 Values Used for Filling")
+                st.dataframe(
+                    pd.DataFrame(
+                        [{"Column": k, "Value Used": v} for k, v in fill_values.items()]
+                    ),
+                    width="stretch"
+                )
+
+            if sel:
+                st.markdown("#### 🔍 Preview (Before vs After)")
+                render_before_after_preview(df, preview_df, sel)
+
+            if st.button("Apply Numeric Handling"):
                 st.session_state.clean_df = preview_df.copy()
-                st.session_state.cleaned_df = preview_df.copy()
                 st.session_state.df = preview_df.copy()
-                st.session_state.cleaned = True
-                st.session_state.page_stage = "completed"
-                st.session_state.missing_summary = {
-                    "mode": "Manual",
-                    "columns": summary
-                }
+                st.session_state.missing_applied = True
 
-                # ---- send missing-value summary to Page 6 ----
-                st.session_state["summaries"]["missing"]["last_action"] = {
-                    "mode": "Manual",
-                    "initial_shape": initial_shape,
-                    "final_shape": preview_df.shape,
-                    "Dropped Columns": [
-                        c for c, v in summary.items() if "Dropped" in v
-                    ],
-                    "Filled Columns": {
-                        c: {"method": v}
-                        for c, v in summary.items() if "Filled" in v
-                    }
-                }
+                for col in sel:
+                    st.session_state.missing_actions_log.append({
+                        "Column": col,
+                        "Type": "Numeric",
+                        "Action": method,
+                        "Value Used": fill_values.get(col)
+                    })
+
+                st.success("Numeric columns handled.")
                 st.rerun()
 
-    # ===========================================================
-    # COMPLETED STAGE
-    # ===========================================================
-    if st.session_state.page_stage == "completed":
+    # ======================
+    # 4B — CATEGORICAL
+    # ======================
+    with st.expander("🟨 Handle Categorical Columns", expanded=False):
 
-        st.subheader("📊 Missing Value Handling Summary")
-        st.write(f"**Mode:** {st.session_state.missing_summary.get('mode','')}")
+        avail = [c for c in cat_cols if c in active_missing_cols]
 
-        st.table(
-            pd.DataFrame.from_dict(
-                st.session_state.missing_summary.get("columns", {}),
-                orient="index",
-                columns=["Action Taken"]
+        if not avail:
+            st.info("No categorical columns pending.")
+        else:
+            sel = st.multiselect("Select categorical columns", avail, key="cat_sel")
+            method = st.selectbox(
+                "Choose method",
+                ["Fill with Mode", "Fill with Custom Value", "Drop Rows"],
+                key="cat_method"
             )
+
+            preview_df = df.copy()
+            fill_values = {}
+
+            for col in sel:
+                if method == "Drop Rows":
+                    preview_df = preview_df[preview_df[col].notna()]
+                    continue
+
+                if method == "Fill with Mode":
+                    val = preview_df[col].mode().iloc[0]
+                else:
+                    val = st.text_input(f"Custom value for {col}", key=f"cat_custom_{col}")
+
+                fill_values[col] = val
+                preview_df[col] = preview_df[col].fillna(val)
+
+            if fill_values:
+                st.markdown("#### 🔍 Values Used for Filling")
+                st.dataframe(
+                    pd.DataFrame(
+                        [{"Column": k, "Value Used": v} for k, v in fill_values.items()]
+                    ),
+                    width="stretch"
+                )
+
+            if sel:
+                st.markdown("#### 🔍 Preview (Before vs After)")
+                render_before_after_preview(df, preview_df, sel)
+
+            if st.button("Apply Categorical Handling"):
+                st.session_state.clean_df = preview_df.copy()
+                st.session_state.df = preview_df.copy()
+                st.session_state.missing_applied = True
+
+                for col in sel:
+                    st.session_state.missing_actions_log.append({
+                        "Column": col,
+                        "Type": "Categorical",
+                        "Action": method,
+                        "Value Used": fill_values.get(col)
+                    })
+
+                st.success("Categorical columns handled.")
+                st.rerun()
+
+    # ======================
+    # 4C — MIXED
+    # ======================
+    with st.expander("🟥 Handle Mixed Columns", expanded=False):
+
+        avail = [c for c in mix_cols if c in active_missing_cols]
+
+        if not avail:
+            st.info("No mixed columns pending.")
+        else:
+            st.warning(
+                "Mixed columns are filled temporarily. "
+                "Semantic interpretation happens in the next step."
+            )
+
+            sel = st.multiselect("Select mixed columns", avail, key="mix_sel")
+            method = st.selectbox(
+                "Choose method",
+                [
+                    "Fill with Mean",
+                    "Fill with Median",
+                    "Fill with Mode",
+                    "Fill with Custom Value",
+                    "Drop Rows"
+                ],
+                key="mix_method"
+            )
+
+            preview_df = df.copy()
+            fill_values = {}
+
+            for col in sel:
+                numeric_series = pd.to_numeric(preview_df[col], errors="coerce")
+
+                if method == "Drop Rows":
+                    preview_df = preview_df[preview_df[col].notna()]
+                    continue
+
+                if method in ["Fill with Mean", "Fill with Median"]:
+                    if numeric_series.notna().sum() == 0:
+                        st.warning(
+                            f"Column '{col}' has non acceptable numeric values. "
+                            "Mean/Median cannot be applied. "
+                            "Try Mode, Custom Value, or Drop Rows."
+                        )
+                        continue
+
+                    val = (
+                        numeric_series.mean()
+                        if method == "Fill with Mean"
+                        else numeric_series.median()
+                    )
+
+                elif method == "Fill with Mode":
+                    val = preview_df[col].mode().iloc[0]
+
+                else:
+                    val = st.text_input(f"Custom value for {col}", key=f"mix_custom_{col}")
+
+                fill_values[col] = val
+                preview_df[col] = preview_df[col].fillna(val)
+
+            if fill_values:
+                st.markdown("#### 🔍 Values Used for Filling")
+                st.dataframe(
+                    pd.DataFrame(
+                        [{"Column": k, "Value Used": v} for k, v in fill_values.items()]
+                    ),
+                    width="stretch"
+                )
+
+            if sel:
+                st.markdown("#### 🔍 Preview (Before vs After)")
+                render_before_after_preview(df, preview_df, sel)
+
+            if st.button("Apply Mixed Handling"):
+                st.session_state.clean_df = preview_df.copy()
+                st.session_state.df = preview_df.copy()
+                st.session_state.missing_applied = True
+
+                for col in sel:
+                    st.session_state.missing_actions_log.append({
+                        "Column": col,
+                        "Type": "Mixed",
+                        "Action": method,
+                        "Value Used": fill_values.get(col)
+                    })
+
+                st.success("Mixed columns handled.")
+                st.rerun()
+
+    # -------------------------------------------------------
+    # STEP 5 — SUMMARY
+    # -------------------------------------------------------
+    if st.session_state.missing_actions_log:
+        st.subheader("📋 Missing Value Handling Summary")
+        st.dataframe(
+            pd.DataFrame(st.session_state.missing_actions_log),
+            width="stretch"
         )
 
-        if st.button("↩️ Undo Last Operation"):
-            perform_undo()
+    # -------------------------------------------------------
+    # STEP 6 — OVERALL BEFORE vs AFTER
+    # -------------------------------------------------------
+    if st.session_state.missing_actions_log:
+        cols = list({x["Column"] for x in st.session_state.missing_actions_log})
+        b1, b2 = st.columns(2)
+
+        with b1:
+            st.markdown("**Before (Step-3 Snapshot)**")
+            st.dataframe(st.session_state.step3_df[cols], width="stretch", height=300)
+
+        with b2:
+            st.markdown("**After (Current Dataset)**")
+            st.dataframe(df[cols], width="stretch", height=300)
+
+    # -------------------------------------------------------
+    # STEP 7 — UNDO
+    # -------------------------------------------------------
+    st.divider()
+    if st.button("↩ Undo Last Action"):
+        perform_undo()
+
+    # -------------------------------------------------------
+    # STEP 9 — DOWNLOAD CLEANED DATASET
+    # -------------------------------------------------------
+    st.subheader("⬇ Download Cleaned Dataset")
+
+    if not st.session_state.missing_applied:
+        st.info(
+            "ℹ️ Please handle missing values using the options above before downloading "
+            "the cleaned dataset."
+        )
+    else:
+        st.caption(
+            "This dataset contains all missing values handled and is ready for the next step."
+        )
+
+        csv_data = df.to_csv(index=False).encode("utf-8")
 
         st.download_button(
-            "⬇️ Download Cleaned Dataset",
-            data=st.session_state.clean_df.to_csv(index=False).encode("utf-8"),
+            label="⬇ Download cleaned dataset (CSV)",
+            data=csv_data,
             file_name="cleaned_missing_values.csv",
-            mime="text/csv"
+            mime="text/csv",
         )
-        st.markdown("**Missing Value Handled. You can download the dataset or go back using undo.**")
 
-        st.markdown("---")
-        st.subheader("Next Step: Semantic Cleanup")
-        st.info("Semantic Cleanup fixes dirty or inconsistent *values* inside columns — it standardizes numeric/text representations,"
-                "removes noise (symbols, units, punctuation), groups similar patterns, and lets you preview & apply safe fixes.")
+    # -------------------------------------------------------
+    # STEP 8 — SEMANTIC CLEANUP INTRO
+    # -------------------------------------------------------
+    st.subheader("🧠 Next Step: Semantic Cleanup")
+    st.markdown(
+        "The next step will interpret ranges, units, and encoded values "
+        "to convert mixed and categorical columns into clean, analysis-ready formats."
+    )
 
-        remaining = st.session_state.clean_df.columns[
-            st.session_state.clean_df.isnull().any()
-        ].tolist()
-
-        if st.button("Proceed to Semantic Cleanup →"):
-            if remaining:
-                st.warning("Please handle missing values for all columns before proceeding.")
-            else:
-                st.session_state.current_page = "Semantic Cleanup"
-                st.rerun()
+    # -------------------------------------------------------
+    # STEP 10 — NAVIGATION
+    # -------------------------------------------------------
+    if active_missing_cols:
+        st.warning("Please handle all missing values before proceeding.")
+    else:
+        if st.button("Go to Semantic Cleanup"):
+            st.session_state.current_page = "Semantic Cleanup"
+            st.rerun()
