@@ -106,6 +106,12 @@ def compute_outlier_stats(df, numeric_cols, k=1.5):
 # SESSION STATE SETUP
 # ---------------------------------------------------------
 def init_session():
+    """
+    Initialize all Outlier Handling session state keys.
+    SAFE to call multiple times.
+    NO recursion.
+    """
+
     st.session_state.setdefault("outlier_configs", {})
     st.session_state.setdefault("outlier_stats_cache", {})
     st.session_state.setdefault("outlier_report", [])
@@ -117,6 +123,10 @@ def init_session():
         "z_thresh": 3.0
     })
 
+    # Navigation / warnings
+    st.session_state.setdefault("outlier_page4_warning", False)
+    st.session_state.setdefault("outlier_page4_remaining", [])
+
     # Navigation state
     st.session_state.setdefault("outlier_page4_warning", False)
     st.session_state.setdefault("outlier_page4_remaining", [])
@@ -125,6 +135,10 @@ def init_session():
 # MAIN PAGE FUNCTION
 # ---------------------------------------------------------
 def run_outlier_handling():
+    if "outlier_stats_cache" not in st.session_state:
+        init_session()
+
+
     st.markdown("""
     <div class="page-title-box">
         <span style="font-size:28px;font-weight:800;">📉 Outlier Handling</span>
@@ -210,7 +224,7 @@ def run_outlier_handling():
     # ---------------------------------------------------------
     # MODE SELECTION
     # ---------------------------------------------------------
-    mode = st.radio("Choose Mode:", ["Auto Mode (Recommended)", "Manual Mode"], index=0)
+    mode = st.radio("Choose Mode:", ["Auto Mode (Recommended)", "Manual Mode (Visuable)"], index=0)
 
     # ---------------------------------------------------------
     # AUTO MODE

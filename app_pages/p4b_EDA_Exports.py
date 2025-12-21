@@ -310,7 +310,7 @@ def run_eda_exports():
     # SINGLE PREVIEWS
     # -----------------------------------------
     st.header("👀 Single Chart Previews")
-    modes = ["Histogram","Boxplot","Scatter","Cat→Num","Cat→Cat","Correlation"]
+    modes = ["Histogram","Boxplot","Scatter","Categorical Bar","Cat→Num","Cat→Cat","Correlation"]
     sel = st.multiselect("Select preview types:", modes, key="p4b_single_modes")
     # HISTOGRAM (multi-style with progress + slider)
     if "Histogram" in sel:
@@ -356,7 +356,7 @@ def run_eda_exports():
         total_hist = len(st.session_state.hist_figs)
         idx_hist = st.slider("View Histogram:", 1, total_hist, 1, key="p4b_hist_slider")
         st.markdown(f"### 📌 {st.session_state.hist_names[idx_hist-1]}")
-        st.plotly_chart(st.session_state.hist_figs[idx_hist-1], use_container_width=True)
+        st.plotly_chart(st.session_state.hist_figs[idx_hist-1], width='stretch')
 
     # BOXPLOT (multi-style with progress + slider)
     if "Boxplot" in sel:
@@ -403,7 +403,68 @@ def run_eda_exports():
         total_box = len(st.session_state.box_figs)
         idx_box = st.slider("View Boxplot:", 1, total_box, 1, key="p4b_box_slider")
         st.markdown(f"### 📌 {st.session_state.box_names[idx_box-1]}")
-        st.plotly_chart(st.session_state.box_figs[idx_box-1], use_container_width=True)
+        st.plotly_chart(st.session_state.box_figs[idx_box-1], width='stretch')
+
+    # CATEGORICAL BAR (multi-style with progress + slider)
+    if "Categorical Bar" in sel:
+
+        if "catbar_figs" not in st.session_state:
+            st.session_state.catbar_figs = []
+        if "catbar_names" not in st.session_state:
+            st.session_state.catbar_names = []
+
+        ccols = st.multiselect("Categorical Bar columns:", cat_cols, key="p4b_catbar_cols")
+
+        if st.button("Preview Categorical Bars", key="p4b_catbar_preview"):
+            st.session_state.catbar_figs = []
+            st.session_state.catbar_names = []
+
+            total = len(ccols)
+            if total > 0:
+                prog = st.progress(0)
+            else:
+                prog = None
+
+            for i, col in enumerate(ccols, start=1):
+
+                freq = df[col].value_counts().reset_index()
+                freq.columns = [col, "Count"]
+
+                fig = px.bar(
+                    freq,
+                    x=col,
+                    y="Count",
+                    text="Count",
+                    title=f"Frequency — {col}"
+                )
+                fig.update_layout(template="plotly_dark")
+
+                st.session_state.catbar_figs.append(fig)
+                st.session_state.catbar_names.append(col)
+
+                # PNG for export (Cat vs Num bar style)
+                cache[f"catbar_{col}.png"] = png_freq(df, col)
+
+                # summary
+                label = f"{col} (frequency)"
+                if label not in st.session_state.eda_export_summary["bar_plots"]:
+                    st.session_state.eda_export_summary["bar_plots"].append(label)
+
+                if prog is not None:
+                    prog.progress(int(i / total * 100))
+                    time.sleep(MICRO_SLEEP)
+
+            st.success(f"Generated {total} categorical bar charts.")
+
+        # SLIDER VIEWER — CATEGORICAL BAR
+    if st.session_state.get("catbar_figs"):
+        total_cb = len(st.session_state.catbar_figs)
+        idx_cb = st.slider("View Categorical Bar:", 1, total_cb, 1, key="p4b_catbar_slider")
+        st.markdown(f"### 📌 {st.session_state.catbar_names[idx_cb - 1]}")
+        st.plotly_chart(
+            st.session_state.catbar_figs[idx_cb - 1],
+            width='stretch'
+        )
 
     # SCATTER (single)
     if "Scatter" in sel:
@@ -419,7 +480,7 @@ def run_eda_exports():
             except Exception:
                 fig = px.scatter(df, x=sc_x, y=sc_y, title=f"{sc_x} vs {sc_y}")
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
             cache[f"scatter_{sc_x}_{sc_y}.png"] = png_scatter(df, sc_x, sc_y, sc_trend)
 
             # summary: num↔num
@@ -453,7 +514,7 @@ def run_eda_exports():
                     st.session_state.eda_export_summary["bar_plots"].append(bar_label)
 
             fig.update_layout(template="plotly_dark")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
             # summary: Num→Cat link (num → cat)
             link = f"{cvn_num} → {cvn_cat}"
@@ -473,13 +534,13 @@ def run_eda_exports():
                 freq.columns = [cvc_a, "Count"]
                 fig = px.bar(freq, x=cvc_a, y="Count", title=f"Frequency — {cvc_a}")
                 fig.update_layout(template="plotly_dark")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
                 cache[f"catcat_freq_{cvc_a}.png"] = png_freq(df, cvc_a)
             else:
                 cross = df.groupby([cvc_a, cvc_b]).size().reset_index(name="Count")
                 fig = px.density_heatmap(cross, x=cvc_a, y=cvc_b, z="Count", title=f"{cvc_a} vs {cvc_b}")
                 fig.update_layout(template="plotly_dark")
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
                 cache[f"catcat_heat_{cvc_a}_{cvc_b}.png"] = png_catcat_heatmap(cvc_a, cvc_b, cross)
 
             # summary: Cat↔Cat pair
@@ -586,7 +647,7 @@ def run_eda_exports():
         total = len(st.session_state.ms_figs)
         idx = st.slider("Select chart to view:", 1, total, 1, key="p4b_ms_slider")
         st.markdown(f"### 📌 {st.session_state.ms_names[idx-1]}")
-        st.plotly_chart(st.session_state.ms_figs[idx-1], use_container_width=True)
+        st.plotly_chart(st.session_state.ms_figs[idx-1], width='stretch')
 
     st.divider()
 
@@ -667,7 +728,7 @@ def run_eda_exports():
         total = len(st.session_state.mc_figs)
         idx = st.slider("Select chart to view:", 1, total, 1, key="p4b_mc_slider")
         st.markdown(f"### 📌 {st.session_state.mc_names[idx-1]}")
-        st.plotly_chart(st.session_state.mc_figs[idx-1], use_container_width=True)
+        st.plotly_chart(st.session_state.mc_figs[idx-1], width='stretch')
 
     st.divider()
     # -------------------------
@@ -746,7 +807,7 @@ def run_eda_exports():
         total = len(st.session_state.mcc_figs)
         idx = st.slider("Select chart to view:", 1, total, 1, key="p4b_mcc_slider")
         st.markdown(f"### 📌 {st.session_state.mcc_names[idx-1]}")
-        st.plotly_chart(st.session_state.mcc_figs[idx-1], use_container_width=True)
+        st.plotly_chart(st.session_state.mcc_figs[idx-1], width='stretch')
 
     st.divider()
 
