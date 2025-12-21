@@ -87,32 +87,28 @@ def build_text_summary() -> str:
 
     summaries = st.session_state.get("summaries", {})
 
-    # ---------- PAGE 2 — MISSING VALUES ----------
-    mv_info = summaries.get("missing", {}).get("last_action")
-
     lines.append("PAGE 2 — Fix Missing Values")
     lines.append("-" * 60)
-    if mv_info:
-        init_shape = mv_info.get("Initial Shape") or mv_info.get("initial_shape")
-        final_shape = mv_info.get("Final Shape") or mv_info.get("final_shape")
-        dropped = mv_info.get("Dropped Columns", [])
-        filled_cols = mv_info.get("Filled Columns", {}) or mv_info.get("filled", {})
 
-        if init_shape and final_shape:
-            lines.append(f"- Initial Shape : {init_shape[0]} × {init_shape[1]}")
-            lines.append(f"- Final Shape   : {final_shape[0]} × {final_shape[1]}")
+    fm = st.session_state.get("fix_missing_summary")
 
-        if dropped:
-            lines.append(f"- Dropped Columns : {', '.join(dropped)}")
+    if fm and any(fm.values()):
+        if fm.get("numerical"):
+            lines.append("- Numerical Columns:")
+            for item in fm["numerical"]:
+                lines.append(f"    - {item['column']}: {item['method']}")
 
-        if filled_cols:
-            lines.append("- Filled Columns:")
-            for col, meta in filled_cols.items():
-                method = meta.get("method", "Unknown")
-                lines.append(f"    - {col}: {method}")
+        if fm.get("categorical"):
+            lines.append("- Categorical Columns:")
+            for item in fm["categorical"]:
+                lines.append(f"    - {item['column']}: {item['method']}")
+
+        if fm.get("mixed"):
+            lines.append("- Mixed Columns:")
+            for item in fm["mixed"]:
+                lines.append(f"    - {item['column']}: {item['method']}")
     else:
         lines.append("- No missing-value operations recorded.")
-    lines.append("")
 
     # ---------- PAGE 2.5 — SEMANTIC CLEANUP ----------
     semantic_log = st.session_state.get("semantic_log", [])

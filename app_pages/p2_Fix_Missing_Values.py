@@ -22,6 +22,13 @@ def perform_undo():
         st.session_state.missing_actions_log = []
         st.session_state.missing_applied = False
 
+        # 🔧 Reset Fix Missing Values summary (Page-6 consistency)
+        st.session_state.fix_missing_summary = {
+            "numerical": [],
+            "categorical": [],
+            "mixed": []
+        }
+
         st.rerun()
     else:
         st.info("Nothing to undo yet.")
@@ -87,6 +94,15 @@ def run_fix_missing_values():
     # -------------------------------------------------------
     st.session_state.setdefault("missing_actions_log", [])
     st.session_state.setdefault("missing_applied", False)
+
+    # -------------------------------------------------------
+    # PAGE-6 SUMMARY STRUCTURE (FIX MISSING VALUES)
+    # -------------------------------------------------------
+    st.session_state.setdefault("fix_missing_summary", {
+        "numerical": [],
+        "categorical": [],
+        "mixed": []
+    })
 
     # -------------------------------------------------------
     # HEADER
@@ -295,6 +311,14 @@ def run_fix_missing_values():
                         "Value Used": fill_values.get(col)
                     })
 
+                for col in sel:
+                    entry = {
+                        "column": col,
+                        "method": method
+                    }
+                    if entry not in st.session_state.fix_missing_summary["numerical"]:
+                        st.session_state.fix_missing_summary["numerical"].append(entry)
+
                 st.success("Numeric columns handled.")
                 st.rerun()
 
@@ -356,6 +380,14 @@ def run_fix_missing_values():
                         "Action": method,
                         "Value Used": fill_values.get(col)
                     })
+
+                for col in sel:
+                    entry = {
+                        "column": col,
+                        "method": method
+                    }
+                    if entry not in st.session_state.fix_missing_summary["categorical"]:
+                        st.session_state.fix_missing_summary["categorical"].append(entry)
 
                 st.success("Categorical columns handled.")
                 st.rerun()
@@ -447,6 +479,14 @@ def run_fix_missing_values():
                         "Action": method,
                         "Value Used": fill_values.get(col)
                     })
+
+                for col in sel:
+                    entry = {
+                        "column": col,
+                        "method": method
+                    }
+                    if entry not in st.session_state.fix_missing_summary["mixed"]:
+                        st.session_state.fix_missing_summary["mixed"].append(entry)
 
                 st.success("Mixed columns handled.")
                 st.rerun()
