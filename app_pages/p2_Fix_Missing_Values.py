@@ -286,7 +286,7 @@ def run_fix_missing_values():
                 preview_df[col] = preview_df[col].fillna(val)
 
             if fill_values:
-                st.markdown("#### 🔍 Values Used for Filling")
+                st.markdown("#### 🔍 Values Use for Filling")
                 st.dataframe(
                     pd.DataFrame(
                         [{"Column": k, "Value Used": v} for k, v in fill_values.items()]
@@ -356,7 +356,7 @@ def run_fix_missing_values():
                 preview_df[col] = preview_df[col].fillna(val)
 
             if fill_values:
-                st.markdown("#### 🔍 Values Used for Filling")
+                st.markdown("#### 🔍 Values Use for Filling")
                 st.dataframe(
                     pd.DataFrame(
                         [{"Column": k, "Value Used": v} for k, v in fill_values.items()]
@@ -455,7 +455,7 @@ def run_fix_missing_values():
                 preview_df[col] = preview_df[col].fillna(val)
 
             if fill_values:
-                st.markdown("#### 🔍 Values Used for Filling")
+                st.markdown("#### 🔍 Values Use for Filling")
                 st.dataframe(
                     pd.DataFrame(
                         [{"Column": k, "Value Used": v} for k, v in fill_values.items()]

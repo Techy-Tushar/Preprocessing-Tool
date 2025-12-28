@@ -600,7 +600,7 @@ def run_semantic_cleanup_page(df):
     for c in df.columns:
         t, reason = analyze_column_basic(df[c])
         rows.append({"Column": c, "Detected Type": t, "Reason": reason})
-    st.dataframe(pd.DataFrame(rows), use_container_width=True)
+    st.dataframe(pd.DataFrame(rows), width='stretch')
     st.markdown("---")
 
     # initialize batch actions structure
@@ -623,7 +623,7 @@ def run_semantic_cleanup_page(df):
             st.markdown("**Frequency (top values)**")
             freq = df[col].astype(str).value_counts(dropna=False).to_frame("Count")
             freq["Percent"] = (freq["Count"] / len(df)) * 100
-            st.dataframe(freq.head(200), use_container_width=True)
+            st.dataframe(freq.head(200), width='stretch')
 
             st.markdown("**Detected pattern groups (Highest to lowest)**")
             groups = group_by_pattern(df[col])
@@ -710,10 +710,10 @@ def run_semantic_cleanup_page(df):
                 c1, c2 = st.columns(2)
                 with c1:
                     st.write("BEFORE (sample, top 50)")
-                    st.dataframe(before_df, use_container_width=True)
+                    st.dataframe(before_df, width='stretch')
                 with c2:
                     st.write("AFTER (sample, top 50)")
-                    st.dataframe(after_df, use_container_width=True)
+                    st.dataframe(after_df, width='stretch')
 
                 # include checkbox to add to batch
                 batch_key = st.checkbox(f"Include this group '{gkey}' for APPLY ALL", key=f"include_{col}_{gkey}")
@@ -795,15 +795,183 @@ def run_semantic_cleanup_page(df):
             st.rerun()
 
     st.markdown("---")
-    # Final summary before navigation (also appears after apply as requested)
-    st.subheader("Final Summary (latest actions)")
+
+    # ----------------------------------------------------
+    # 🔧 Advanced: Semantic Role & Data Type Override
+    # ----------------------------------------------------
+    with st.expander("🔧 Advanced: Semantic Role & Data Type Override", expanded=False):
+
+        st.markdown(
+            "This section lets you **manually control how each column should be treated** "
+            "in later steps. Changes are queued and applied together for safety."
+        )
+
+        df = st.session_state.get("df")
+
+        if df is None or not isinstance(df, pd.DataFrame):
+            st.warning("Dataset not available.")
+        else:
+            # -------------------------------
+            # Dataset Preview
+            # -------------------------------
+            st.markdown("### 🔍 Dataset Preview (Top 10 rows)")
+            st.dataframe(df.head(10), width='stretch')
+
+            # -------------------------------
+            # Init State
+            # -------------------------------
+            semantic_roles = st.session_state.setdefault("semantic_roles", {})
+            semantic_queue = st.session_state.setdefault("semantic_queue", {})
+
+            # -------------------------------
+            # Role Options
+            # -------------------------------
+            role_map = {
+                "Keep as is": None,
+                "Numeric (measure)": "numeric_measure",
+                "Categorical (ID / Label)": "categorical",
+                "Text": "text",
+                "Date / Time": "datetime"
+            }
+
+            # -------------------------------
+            # Current Column State Table
+            # -------------------------------
+            st.markdown("### 📊 Current Column State")
+
+            current_state_df = pd.DataFrame({
+                "Column": df.columns,
+                "Pandas dtype": [str(df[c].dtype) for c in df.columns],
+                "Semantic role": [
+                    semantic_roles.get(
+                        c,
+                        "numeric_measure" if pd.api.types.is_numeric_dtype(df[c]) else "categorical"
+                    )
+                    for c in df.columns
+                ]
+            })
+
+            st.dataframe(current_state_df, width='stretch')
+
+            # -------------------------------
+            # Dropdowns (Queued Changes)
+            # -------------------------------
+            st.markdown("### 🛠️ Select Changes (Queued Until Apply)")
+
+            for col in df.columns:
+                selection = st.selectbox(
+                    f"{col}",
+                    list(role_map.keys()),
+                    key=f"semantic_select_{col}"
+                )
+
+                if role_map[selection] is None:
+                    semantic_queue.pop(col, None)
+                else:
+                    semantic_queue[col] = role_map[selection]
+
+            # -------------------------------
+            # Show Queue
+            # -------------------------------
+            if semantic_queue:
+                st.markdown("### 📥 Queued Changes")
+                queued_df = pd.DataFrame({
+                    "Column": semantic_queue.keys(),
+                    "New Semantic Role": semantic_queue.values()
+                })
+                st.dataframe(queued_df, width='stretch')
+            else:
+                st.info("No semantic changes queued.")
+
+            # -------------------------------
+            # APPLY BUTTON (CORE LOGIC)
+            # -------------------------------
+            if st.button("✅ Apply Semantic Changes"):
+
+                if not semantic_queue:
+                    st.warning("No changes to apply.")
+                else:
+                    # Backup for undo
+                    st.session_state.last_cleaned_df = df.copy()
+
+                    progress = st.progress(0)
+                    status = st.empty()
+
+                    total = len(semantic_queue)
+                    updated_df = df.copy()
+
+                    for i, (col, role) in enumerate(semantic_queue.items(), start=1):
+                        status.info(f"Applying: {col} → {role}")
+
+                        # Save semantic role
+                        semantic_roles[col] = role
+
+                        # ---- DTYPE CONVERSION (ONCE) ----
+                        try:
+                            if role == "numeric_measure":
+                                updated_df[col] = pd.to_numeric(updated_df[col], errors="coerce")
+
+                            elif role == "categorical":
+                                updated_df[col] = updated_df[col].astype("category")
+
+                            elif role == "datetime":
+                                updated_df[col] = pd.to_datetime(updated_df[col], errors="coerce")
+
+                            # text → no conversion
+
+                        except Exception as e:
+                            st.warning(f"Failed to convert {col}: {e}")
+
+                        progress.progress(int((i / total) * 100))
+
+                    # Clear queue
+                    semantic_queue.clear()
+
+                    # 🔑 UPDATE SHARED DATASET (CRITICAL)
+                    st.session_state.df = updated_df
+                    st.session_state.clean_df = updated_df
+
+                    # overwrite semantic override log (no duplicates)
+                    st.session_state["semantic_change_log"] = [
+                        {
+                            "column": col,
+                            "semantic_role": role,
+                            "dtype": str(updated_df[col].dtype)
+                        }
+                        for col, role in semantic_roles.items()
+                    ]
+
+                    st.success("Semantic roles and data types applied successfully.")
+
+            # -------------------------------
+            # Final Semantic Table
+            # -------------------------------
+            if semantic_roles:
+                st.markdown("### ✅ Final Semantic Configuration")
+                final_roles_df = pd.DataFrame({
+                    "Column": semantic_roles.keys(),
+                    "Semantic Role": semantic_roles.values()
+                })
+                st.dataframe(final_roles_df, width='stretch')
+
+    st.subheader("Final Summary")
+
+    # semantic cleanup summary
     logs = st.session_state.get("semantic_log", [])
     if logs:
-        # show last 50
         for entry in reversed(logs[-50:]):
             st.write(entry)
     else:
         st.write("— none —")
+
+    # semantic override summary (ALWAYS separate)
+    st.markdown("### 🔧 Semantic Role Overrides")
+    override_log = st.session_state.get("semantic_change_log", [])
+
+    if override_log:
+        st.dataframe(pd.DataFrame(override_log), width='stretch')
+    else:
+        st.info("No semantic role overrides applied.")
 
         # ----------------------------------------------------
         # 🔍 BEFORE vs AFTER DATASET PREVIEW (TOP 20 ROWS)
@@ -818,11 +986,11 @@ def run_semantic_cleanup_page(df):
 
         with c1:
             st.markdown("### BEFORE Cleanup")
-            st.dataframe(old_df.head(50), use_container_width=True)
+            st.dataframe(old_df.head(50), width='stretch')
 
         with c2:
             st.markdown("### AFTER Cleanup")
-            st.dataframe(new_df.head(50), use_container_width=True)
+            st.dataframe(new_df.head(50), width='stretch')
 
     else:
         st.info("Preview not available yet. Apply some semantic cleanup first.")

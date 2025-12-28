@@ -109,18 +109,61 @@ def build_text_summary() -> str:
                 lines.append(f"    - {item['column']}: {item['method']}")
     else:
         lines.append("- No missing-value operations recorded.")
+    lines.append("")
 
     # ---------- PAGE 2.5 — SEMANTIC CLEANUP ----------
     semantic_log = st.session_state.get("semantic_log", [])
+    semantic_roles = st.session_state.get("semantic_roles", {})
 
     lines.append("PAGE 2.5 — Semantic Cleanup")
     lines.append("-" * 60)
+
+    # ---- Auto semantic cleanup actions ----
     if semantic_log:
         lines.append("- Semantic cleanup actions:")
         for entry in semantic_log:
             lines.append(f"    - {entry}")
     else:
         lines.append("- No semantic cleanup actions recorded.")
+
+    # ---- Semantic role / dtype overrides ----
+    if semantic_roles:
+        lines.append("")
+        lines.append("- Semantic role overrides:")
+
+        grouped = {
+            "numeric_measure": [],
+            "categorical": [],
+            "text": [],
+            "datetime": []
+        }
+
+        for col, role in semantic_roles.items():
+            grouped.setdefault(role, []).append(col)
+
+        if grouped["numeric_measure"]:
+            lines.append("    - Numeric (Measure) Columns:")
+            for col in grouped["numeric_measure"]:
+                lines.append(f"        - {col}")
+
+        if grouped["categorical"]:
+            lines.append("    - Categorical (ID / Label) Columns:")
+            for col in grouped["categorical"]:
+                lines.append(f"        - {col}")
+
+        if grouped["text"]:
+            lines.append("    - Text Columns:")
+            for col in grouped["text"]:
+                lines.append(f"        - {col}")
+
+        if grouped["datetime"]:
+            lines.append("    - Date / Time Columns:")
+            for col in grouped["datetime"]:
+                lines.append(f"        - {col}")
+    else:
+        lines.append("")
+        lines.append("- No semantic role overrides applied.")
+
     lines.append("")
 
     # ---------- PAGE 3 — OUTLIER HANDLING ----------
